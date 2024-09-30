@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto Reload</title>
+</head>
+<body>
+    <h1>Hello from the Raspberry Pi</h1>
+    
+    <form id="dataForm">
+        <input type="text" id="fwdMeters">
+        <button type="button" onclick="sendData('fwd')">Вперед</button>
+        <br>
+        <input type="text" id="bwdMeters">
+        <button type="button" onclick="sendData('bwd')">Назад</button>
+        <br>
+        <input type="text" id="turnDegreeInput">
+        <button type="button" onclick="sendData('trn')">Поворот</button>
+        <button type="button" onclick="sendData('rst')">Поворот</button>
+    </form>
+    
+    <script>
+        const socket = new WebSocket('ws://localhost:8765');
+        socket.onmessage = function(event) {
+            if (event.data === 'reload') {
+                location.reload();
+            }
+        };
+
+        function sendData(command) {
+            var content;
+            const movementLimit = 5;
+            switch(command) {
+                case 'fwd':
+                    content = 'fwd=' + (document.getElementById('fwdMeters').value <= movementLimit) ? document.getElementById('fwdMeters').value : movementLimit;
+                    break;
+                case 'bwd':
+                    content = 'bwd=' + (document.getElementById('bwdMeters').value <= movementLimit) ? document.getElementById('bwdMeters').value : movementLimit;
+                    break;
+                case 'trn': 
+                    content = 'trn=' + document.getElementById('turnDegreeInput').value;
+                    break;
+                case 'rst': 
+                    content = 'rst=0';
+                    break;
+                default:
+                    content = 'err=0';
+                    break;
+            } 
+            
+            
+            fetch('http://localhost:8000', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: content
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Data sent successfully');
+                } else {
+                    console.error('Error sending data');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
